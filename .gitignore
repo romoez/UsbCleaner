@@ -1,0 +1,10 @@
+.vscode/
+
+FalsePositive/
+tests/
+Install/
+__dev.txt
+todo.txt
+*.exe
+
+*_stripped.au3
