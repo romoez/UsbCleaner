@@ -8,8 +8,8 @@
 #pragma compile(Out, Install\Files\UsbCleanerGui.exe)
 #pragma compile(FileDescription, UsbCleaner)
 #pragma compile(ProductName, UsbCleaner)
-#pragma compile(ProductVersion, 0.1.9.519)
-#pragma compile(FileVersion, 0.1.9.519, 0.1.9.519) ; The last parameter is optional.
+#pragma compile(ProductVersion, 0.1.12.415)
+#pragma compile(FileVersion, 0.1.12.415, 0.1.12.415) ; The last parameter is optional.
 #pragma compile(LegalCopyright, 2019-2022 © La Communauté Tunisienne des Enseignants d'Informatique)
 #pragma compile(Comments,'UsbCleaner Gui')
 #pragma compile(ProductContact,moez.romdhane@tarbia.tn)

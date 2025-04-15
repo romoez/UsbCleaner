@@ -3,17 +3,17 @@
 ;~ #AutoIt3Wrapper_Compression=4
 ;~ #AutoIt3Wrapper_UseUpx=y
 #AutoIt3Wrapper_Run_Au3Stripper=y
+#AutoIt3Wrapper_Res_Field=URL|https://github.com/romoez/UsbCleaner
+#AutoIt3Wrapper_Res_Field=Email|moez.romdhane@tarbia.tn
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #pragma compile(Icon, res\UsbCleaner.ico)
 #pragma compile(Out, Install\Files\UsbCleaner.exe)
 #pragma compile(FileDescription, UsbCleaner)
 #pragma compile(ProductName, UsbCleaner)
-#pragma compile(ProductVersion, 0.1.9.519)
-#pragma compile(FileVersion, 0.1.9.519, 0.1.9.519) ; The last parameter is optional.
-#pragma compile(LegalCopyright, 2019-2022 © La Communauté Tunisienne des Enseignants d'Informatique)
+#pragma compile(ProductVersion, 0.1.12.415)
+#pragma compile(FileVersion, 0.1.12.415, 0.1.12.415) ; The last parameter is optional.
+#pragma compile(LegalCopyright, 2019-2025 © La Communauté Tunisienne des Enseignants d'Informatique)
 #pragma compile(Comments,'UsbCleaner')
-#pragma compile(ProductContact,moez.romdhane@tarbia.tn)
-#pragma compile(ProductPublisherURL, https://github.com/romoez/UsbCleaner)
 #pragma compile(CompanyName, La Communauté Tunisienne des Enseignants d'Informatique)
 #pragma compile(AutoItExecuteAllowed, False)
 
@@ -32,6 +32,8 @@ Dim $Drive_Type = "ALL"
 Dim $MyDrive = "STUFF"
 Global Const $SUSPICIOUS_FILES_FOLDER = "\SuspiciousFiles\"
 
+Global Const $UID_SESSION = _GetUidSession()
+
 _KillOtherScript()
 
 UpdateDrives()
@@ -46,7 +48,10 @@ Func DeviceChange($hWndGUI, $MsgID, $WParam, $LParam)
 			$New = FindNewDrive()
 			If _WinAPI_IsWritable($New) Then
 				$aFiles = _FileListToArray($New, "*", Default, True)
-				_CleanUp($aFiles)
+				$iBacCollectorUSB = _CleanUp($aFiles)
+				If FileExists(@ScriptDir & "\UsbWatcher.exe") And Not $iBacCollectorUSB Then
+					ShellExecute(@ScriptDir & "\UsbWatcher.exe", $New & " " & $UID_SESSION)
+				EndIf
 
 				Run("explorer.exe /e, " & $New)
 			EndIf
@@ -72,7 +77,7 @@ Func UpdateDrives()
 EndFunc   ;==>UpdateDrives
 
 Func _CleanUp(ByRef $aFiles)
-	Local $sHashFile = ""
+	Local $iBacCollectorUSB = 0, $sHashFile = ""
 	If IsArray($aFiles) Then
 		Local $sDrive = "", $sDir = "", $sFileName = "", $sExtension = ""
 		ProgressOn("UsbCleaner", "Scan du lecteur """ & StringLeft($aFiles[1], 3) & """", "[0%] Initialisation...", Default, Default)
@@ -83,6 +88,9 @@ Func _CleanUp(ByRef $aFiles)
 			$sFileName = ""
 			_PathSplit($aFiles[$i], $sDrive, $sDir, $sFileName, $sExtension)
 			If FileGetAttrib($aFiles[$i]) = 'D' Then ContinueLoop
+			If StringInStr($sFileName, "BacCollector") Then
+				$iBacCollectorUSB = 1
+			EndIf
 			If $sFileName & $sExtension = "autorun.inf" Or $sExtension = ".lnk" Or $sExtension = ".pif" Or $sExtension = ".vbs" Or $sExtension = ".vbe" Or $sExtension = ".wsf" Then
 				FileMove($aFiles[$i], $sDrive & $SUSPICIOUS_FILES_FOLDER & $sFileName & $sExtension, 9)
 			ElseIf $sExtension = ".exe" Then
@@ -95,6 +103,7 @@ Func _CleanUp(ByRef $aFiles)
 		_SetIconToSuspiciousFilesFolder($sDrive)
 		ProgressOff()
 	EndIf
+	Return $iBacCollectorUSB
 
 EndFunc   ;==>_CleanUp
 
@@ -137,6 +146,14 @@ Func _KillOtherScript()
 		EndIf
 	Next
 EndFunc   ;==>_KillOtherScript
+
+Func _GetUidSession()
+    $Uuid = StringFormat("%04i.%02i.%02i__%02i.%02i.%02i__%04X%04X", @YEAR, @MON, @MDAY, @HOUR, @MIN, @SEC, _
+            Random(0, 0xffff), _
+            BitOR(Random(0, 0x0fff), 0x4000) _
+        )
+	Return $Uuid
+EndFunc
 
 While 1
 	$GuiMsg = GUIGetMsg()
