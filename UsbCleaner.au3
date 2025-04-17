@@ -10,8 +10,8 @@
 #pragma compile(Out, Install\Files\UsbCleaner.exe)
 #pragma compile(FileDescription, UsbCleaner)
 #pragma compile(ProductName, UsbCleaner)
-#pragma compile(ProductVersion, 0.1.12.415)
-#pragma compile(FileVersion, 0.1.12.415, 0.1.12.415) ; The last parameter is optional.
+#pragma compile(ProductVersion, 0.1.13.417)
+#pragma compile(FileVersion, 0.1.13.417, 0.1.13.417) ; The last parameter is optional.
 #pragma compile(LegalCopyright, 2019-2025 © La Communauté Tunisienne des Enseignants d'Informatique)
 #pragma compile(Comments,'UsbCleaner')
 #pragma compile(CompanyName, La Communauté Tunisienne des Enseignants d'Informatique)
@@ -77,34 +77,61 @@ Func UpdateDrives()
 EndFunc   ;==>UpdateDrives
 
 Func _CleanUp(ByRef $aFiles)
-	Local $iBacCollectorUSB = 0, $sHashFile = ""
-	If IsArray($aFiles) Then
-		Local $sDrive = "", $sDir = "", $sFileName = "", $sExtension = ""
-		ProgressOn("UsbCleaner", "Scan du lecteur """ & StringLeft($aFiles[1], 3) & """", "[0%] Initialisation...", Default, Default)
-		For $i = 1 To $aFiles[0]
-			ProgressSet(Round(($i - 1) / $aFiles[0] * 100), "[" & Round(($i - 1) / $aFiles[0] * 100) & "%] " & $aFiles[$i])
-			FileSetAttrib($aFiles[$i], "-RASH")
-			$sExtension = ""
-			$sFileName = ""
-			_PathSplit($aFiles[$i], $sDrive, $sDir, $sFileName, $sExtension)
-			If FileGetAttrib($aFiles[$i]) = 'D' Then ContinueLoop
-			If StringInStr($sFileName, "BacCollector") Then
-				$iBacCollectorUSB = 1
-			EndIf
-			If $sFileName & $sExtension = "autorun.inf" Or $sExtension = ".lnk" Or $sExtension = ".pif" Or $sExtension = ".vbs" Or $sExtension = ".vbe" Or $sExtension = ".wsf" Then
-				FileMove($aFiles[$i], $sDrive & $SUSPICIOUS_FILES_FOLDER & $sFileName & $sExtension, 9)
-			ElseIf $sExtension = ".exe" Then
-				$iFileSize = FileGetSize($aFiles[$i])
-				If ($iFileSize >= 512000) Then ContinueLoop
-				FileMove($aFiles[$i], $sDrive & $SUSPICIOUS_FILES_FOLDER & $sFileName & $sExtension, 9)
-			EndIf
-		Next
-		$aFiles = 0
-		_SetIconToSuspiciousFilesFolder($sDrive)
-		ProgressOff()
-	EndIf
-	Return $iBacCollectorUSB
+    ; Définir des constantes pour les extensions suspectes et les actions répétitives
+    Const $EXTENSIONS_SUSPECTES = [".lnk", ".pif", ".vbs", ".vbe", ".wsf"]
+    Const $TAILLE_MAX_EXE = 512000
+	Const $BC_FILE_NAME = "BACCOLLECTOR"
+	Const $BC_FILE_NAME_LEN = StringLen($BC_FILE_NAME)
 
+    Local $iBacCollectorUSB = 0
+    If Not IsArray($aFiles) Then Return $iBacCollectorUSB ; Quitter si $aFiles n'est pas un tableau valide
+
+    ; Initialiser les variables locales
+    Local $sDrive, $sDir, $sFileName, $sExtension, $iFileSize, $bIsDirectory
+    Local $sDriveRoot = StringLeft($aFiles[1], 3) ; Récupérer la racine du lecteur
+
+    ; Afficher la barre de progression
+    ProgressOn("UsbCleaner", "Scan du lecteur """ & $sDriveRoot & """", "[0%] Initialisation...", Default, Default)
+
+    For $i = 1 To $aFiles[0]
+        ; Mettre à jour la barre de progression toutes les 10 itérations pour réduire la charge CPU
+        If Mod($i, 10) = 0 Then
+            ProgressSet(Round(($i - 1) / $aFiles[0] * 100), "[" & Round(($i - 1) / $aFiles[0] * 100) & "%] " & $aFiles[$i])
+        EndIf
+		$bIsDirectory = StringInStr(FileGetAttrib($aFiles[$i]), 'D')
+		If $bIsDirectory And $aFiles[$i] = "System Volume Information" Then ContinueLoop
+
+        ; Supprimer les attributs de fichier pour permettre la manipulation
+        FileSetAttrib($aFiles[$i], "-RASH")
+
+        ; Ignorer les dossiers
+        If  $bIsDirectory Then ContinueLoop
+
+        ; Extraire les informations du chemin du fichier
+        _PathSplit($aFiles[$i], $sDrive, $sDir, $sFileName, $sExtension)
+
+        ; Vérifier si le fichier contient "BacCollector"
+        If StringLen($sFileName) = $BC_FILE_NAME_LEN And StringUpper($sFileName) = $BC_FILE_NAME Then
+            $iBacCollectorUSB = 1
+        EndIf
+
+        ; Traiter les fichiers suspects
+        If $sFileName & $sExtension = "autorun.inf" Or _ArraySearch($EXTENSIONS_SUSPECTES, $sExtension) <> -1 Then
+            FileMove($aFiles[$i], $sDrive & $SUSPICIOUS_FILES_FOLDER & $sFileName & $sExtension, 9)
+        ElseIf $sExtension = ".exe" Then
+            $iFileSize = FileGetSize($aFiles[$i])
+            If $iFileSize < $TAILLE_MAX_EXE Then
+                FileMove($aFiles[$i], $sDrive & $SUSPICIOUS_FILES_FOLDER & $sFileName & $sExtension, 9)
+            EndIf
+        EndIf
+    Next
+
+    ; Nettoyer les ressources
+    $aFiles = 0
+    _SetIconToSuspiciousFilesFolder($sDrive)
+    ProgressOff()
+
+    Return $iBacCollectorUSB
 EndFunc   ;==>_CleanUp
 
 Func _SetIconToSuspiciousFilesFolder($sDrive)
