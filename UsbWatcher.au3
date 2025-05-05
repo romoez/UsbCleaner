@@ -10,11 +10,11 @@
 #pragma compile(Out, Install\Files\UsbWatcher.exe)
 #pragma compile(FileDescription, UsbWatcher)
 #pragma compile(ProductName, UsbCleaner)
-#pragma compile(ProductVersion, 0.1.12.415)
-#pragma compile(FileVersion, 0.1.12.415, 0.1.12.415) ; The last parameter is optional.
-#pragma compile(LegalCopyright, 2019-2025 © La Communauté Tunisienne des Enseignants d'Informatique)
+#pragma compile(ProductVersion, 0.1.14.505)
+#pragma compile(FileVersion, 0.1.14.505, 0.1.14.505) ; The last parameter is optional.
+#pragma compile(LegalCopyright, 2019-2025 © Tunisian Community of Computer Science Teachers)
 #pragma compile(Comments,'UsbWatcher')
-#pragma compile(CompanyName, La Communauté Tunisienne des Enseignants d'Informatique)
+#pragma compile(CompanyName, Tunisian Community of Computer Science Teachers)
 #pragma compile(AutoItExecuteAllowed, False)
 
 
@@ -28,6 +28,10 @@
 If $CMDLINE[0] < 2 Then
 	Exit
 EndIf
+
+;@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+;@@@@@@@@@@@@@@         initialisation           @@@@@@@@@@@@@@@@@@@@@
+;@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 Global Const $FREE_SPACE_DRIVE_BACKUP = 5000 ; en Mo
 Global $DossierSauvegardes = "Sauvegardes"
@@ -100,6 +104,15 @@ Func Init()
 		Local $drive_letter = $CMDLINE[1]
 		Local $aArray = _FileListToArrayRec($drive_letter, "*", $FLTAR_FILES, $FLTAR_RECUR)
 		If Not IsArray($aArray) Then Return
+		Local $bBacCollectorFound = False
+		For $i = 1 To $aArray[0]
+			Local $fileName = StringRegExpReplace($aArray[$i], "^.*\\", "")
+			If StringLeft($fileName, 12) = "BacCollector" Then
+				$bBacCollectorFound = True
+				ExitLoop
+			EndIf
+		Next
+		If $bBacCollectorFound Then Return
 		Local $aUsbInfo = _GetUsbDriveInfo($drive_letter)  ; $UsbInfo[0] = Caption, $UsbInfo[1] = $SerialNumber, $UsbInfo[2] = Size (Go)
 		Local $Fldr = @HOUR & "_" & @MIN & "_" & @SEC
 		Local $sInfoUSB = ""
@@ -168,7 +181,6 @@ EndFunc   ;==>_KillOtherScript
 Func LecteurSauvegarde()
 	Local $aDrive = DriveGetDrive('FIXED')
     Local $HomeDrive = StringLeft(@WindowsDir,2)
-	; $Lecteur = @HomeDrive ; "C:" ; $aDrive[1] ; $aDrive[1] peut être A: !!
 	$Lecteur = $HomeDrive ; "C:" ; $aDrive[1] ; $aDrive[1] peut être A: !!
 	For $i = 1 To $aDrive[0]
 		If $aDrive[$i] = $HomeDrive Then ContinueLoop

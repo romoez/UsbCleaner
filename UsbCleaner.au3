@@ -10,11 +10,11 @@
 #pragma compile(Out, Install\Files\UsbCleaner.exe)
 #pragma compile(FileDescription, UsbCleaner)
 #pragma compile(ProductName, UsbCleaner)
-#pragma compile(ProductVersion, 0.1.13.417)
-#pragma compile(FileVersion, 0.1.13.417, 0.1.13.417) ; The last parameter is optional.
-#pragma compile(LegalCopyright, 2019-2025 © La Communauté Tunisienne des Enseignants d'Informatique)
+#pragma compile(ProductVersion, 0.1.14.505)
+#pragma compile(FileVersion, 0.1.14.505, 0.1.14.505) ; The last parameter is optional.
+#pragma compile(LegalCopyright, 2019-2025 © Tunisian Community of Computer Science Teachers)
 #pragma compile(Comments,'UsbCleaner')
-#pragma compile(CompanyName, La Communauté Tunisienne des Enseignants d'Informatique)
+#pragma compile(CompanyName, Tunisian Community of Computer Science Teachers)
 #pragma compile(AutoItExecuteAllowed, False)
 
 ;~ https://www.autoitscript.com/forum/topic/42402-detecting-usb-drive-insertion/
@@ -78,10 +78,10 @@ EndFunc   ;==>UpdateDrives
 
 Func _CleanUp(ByRef $aFiles)
     ; Définir des constantes pour les extensions suspectes et les actions répétitives
-    Const $EXTENSIONS_SUSPECTES = [".lnk", ".pif", ".vbs", ".vbe", ".wsf"]
-    Const $TAILLE_MAX_EXE = 512000
-	Const $BC_FILE_NAME = "BACCOLLECTOR"
-	Const $BC_FILE_NAME_LEN = StringLen($BC_FILE_NAME)
+    Local Const $EXTENSIONS_SUSPECTES = [".lnk", ".pif", ".vbs", ".vbe", ".wsf"]
+    Local Const $TAILLE_MAX_EXE = 512000
+	Local Const $BC_FILE_NAME = "BACCOLLECTOR"
+	Local Const $BC_FILE_NAME_LEN = StringLen($BC_FILE_NAME)
 
     Local $iBacCollectorUSB = 0
     If Not IsArray($aFiles) Then Return $iBacCollectorUSB ; Quitter si $aFiles n'est pas un tableau valide
@@ -89,7 +89,7 @@ Func _CleanUp(ByRef $aFiles)
     ; Initialiser les variables locales
     Local $sDrive, $sDir, $sFileName, $sExtension, $iFileSize, $bIsDirectory
     Local $sDriveRoot = StringLeft($aFiles[1], 3) ; Récupérer la racine du lecteur
-
+	Local Const $SYSTEM_VOLUME_INFORMAION_DIR = $sDriveRoot & "System Volume Information"
     ; Afficher la barre de progression
     ProgressOn("UsbCleaner", "Scan du lecteur """ & $sDriveRoot & """", "[0%] Initialisation...", Default, Default)
 
@@ -99,7 +99,7 @@ Func _CleanUp(ByRef $aFiles)
             ProgressSet(Round(($i - 1) / $aFiles[0] * 100), "[" & Round(($i - 1) / $aFiles[0] * 100) & "%] " & $aFiles[$i])
         EndIf
 		$bIsDirectory = StringInStr(FileGetAttrib($aFiles[$i]), 'D')
-		If $bIsDirectory And $aFiles[$i] = "System Volume Information" Then ContinueLoop
+		If $bIsDirectory And $aFiles[$i] = $SYSTEM_VOLUME_INFORMAION_DIR Then ContinueLoop
 
         ; Supprimer les attributs de fichier pour permettre la manipulation
         FileSetAttrib($aFiles[$i], "-RASH")
